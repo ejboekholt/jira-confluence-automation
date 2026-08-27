@@ -1,0 +1,53 @@
+using System;
+
+namespace CodeExample
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // 1. Output a welcome message to the user
+            Console.WriteLine("Welcome to the C# Basic Calculator!");
+            Console.WriteLine("-----------------------------------");
+
+            // 2. Ask the user for their name
+            Console.Write("Please enter your name: ");
+            string userName = Console.ReadLine();
+
+            // 3. Prompt for the first number
+            Console.Write("Enter the first number: ");
+            double num1 = Convert.ToDouble(Console.ReadLine());
+
+            // 4. Prompt for the second number
+            Console.Write("Enter the second number: ");
+            double num2 = Convert.ToDouble(Console.ReadLine());
+
+            // 5. Choose an operation
+            Console.WriteLine("\nChoose an option:");
+            Console.WriteLine("1. Add (+)");
+            Console.WriteLine("2. Subtract (-)");
+            Console.Write("Enter your choice (1 or 2): ");
+            string choice = Console.ReadLine();
+
+            // 6. Perform calculation based on user selection
+            if (choice == "1")
+            {
+                double result = num1 + num2;
+                Console.WriteLine($"\nHello {userName}, the result of adding is: {result}");
+            }
+            else if (choice == "2")
+            {
+                double result = num1 - num2;
+                Console.WriteLine($"\nHello {userName}, the result of subtracting is: {result}");
+            }
+            else
+            {
+                Console.WriteLine("\nInvalid choice. Please run the program again.");
+            }
+
+            // 7. Keep the console window open
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
+        }
+    }
+}
