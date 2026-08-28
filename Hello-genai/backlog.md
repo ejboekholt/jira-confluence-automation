@@ -6,16 +6,16 @@ Task classification legend: MCP = standard Jira/data/integration/code work; cust
 
 ## Phase 1: Setup
 
-- [ ] Confirm the initial project scope, including target Jira projects, stakeholder groups, and the first pilot cohort (2–3 projects). (MCP)
-- [ ] Finalize the master CR status model and map Jira status values to the registry lifecycle (`New`, `Under review`, `Approved`, `Rejected`, `In progress`, `On hold`, `Completed`, `Cancelled`). (MCP)
-- [ ] Define ownership rules and approval paths for Delivery Managers, Project Leads, and governance stakeholders. (MCP)
-- [ ] Identify required Jira custom fields and the fields that must be manually enriched (for example, project-level governance notes, decision outcomes, and optional context fields). (MCP)
-- [ ] Set up the repository structure, environment configuration, and base application stack for the CR Registry. (MCP)
-- [ ] Establish the database schema for the registry entity and supporting tables, including CR metadata, manual enrichment fields, and audit/history support. (MCP)
-- [ ] Implement seed configuration for project mappings, Jira field mappings, and supported impact/priority values. (MCP)
-- [ ] Configure roles and permissions model for read-only access, manager edits, and admin configuration. (MCP)
-- [ ] Define a refresh cadence and synchronization strategy for Jira data ingestion, including retry and failure logging expectations. (MCP)
-- [ ] Document the operational runbook for ingestion failures, data reprocessing, and ownership escalation. (MCP)
+- [ ] Confirm the initial project scope, including target Jira projects, stakeholder groups, and the first pilot cohort (2–3 projects). (MCP) — GitHub issue #1
+- [ ] Finalize the master CR status model and map Jira status values to the registry lifecycle (`New`, `Under review`, `Approved`, `Rejected`, `In progress`, `On hold`, `Completed`, `Cancelled`). (MCP) — GitHub issue #5
+- [ ] Define ownership rules and approval paths for Delivery Managers, Project Leads, and governance stakeholders. (MCP) — GitHub issue #4
+- [ ] Identify required Jira custom fields and the fields that must be manually enriched (for example, project-level governance notes, decision outcomes, and optional context fields). (MCP) — GitHub issue #2
+- [ ] Set up the repository structure, environment configuration, and base application stack for the CR Registry. (MCP) — GitHub issue #10
+- [ ] Establish the database schema for the registry entity and supporting tables, including CR metadata, manual enrichment fields, and audit/history support. (MCP) — GitHub issue #3
+- [ ] Implement seed configuration for project mappings, Jira field mappings, and supported impact/priority values. (MCP) — GitHub issue #6
+- [ ] Configure roles and permissions model for read-only access, manager edits, and admin configuration. (MCP) — GitHub issue #7
+- [ ] Define a refresh cadence and synchronization strategy for Jira data ingestion, including retry and failure logging expectations. (MCP) — GitHub issue #8
+- [ ] Document the operational runbook for ingestion failures, data reprocessing, and ownership escalation. (MCP) — GitHub issue #9
 
 ## Phase 2: Core Features
 
