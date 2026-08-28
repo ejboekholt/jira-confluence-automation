@@ -7,15 +7,18 @@
 .github/Plan.agent.md
 PROJECT_IDEAS.md
 TODO.md
+backlog.md
 hello.txt
 project_spec.md
 weekly-status-template.md
 work/.DS_Store
 work/module-03-report.md
+work/module-09-report.md
 work/module03-task
 
 
 ## Backlog Commit History
+d7174a6 Add backlog and module 09 report
 
 
 ## backlog.md Contents
