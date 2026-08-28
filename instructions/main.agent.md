@@ -16,3 +16,12 @@ Each entry below is an instruction file with a one-line description.
 - [`./instructions/manage-reporting-export.agent.md`](./manage-reporting-export.agent.md) — generate project, program, or portfolio reporting views and export-ready results for CR data.
   + Keywords: reporting, export, dashboard, CSV, shareable report, summary view, overdue report
   + Target: `**/*.md`, `**/*.py`, `**/*.ts`, `**/*.js`
+- [`./instructions/calculate-compound-interest.agent.md`](./calculate-compound-interest.agent.md) — calculate compound interest and present the final amount and interest earned using the project tool.
+  + Keywords: compound interest, future value, interest earned, monthly compounding, savings projection, loan growth
+  + Target: `**/*.md`, `**/*.py`
+- [`./instructions/use-jira-issue-fetch.agent.md`](./use-jira-issue-fetch.agent.md) — retrieve Jira issue data for a project using the Jira fetch script.
+  + Keywords: fetch Jira issues, Jira project data, Jira tickets, active issues, project retrieval
+  + Target: `**/*.md`, `**/*.py`
+- [`./instructions/use-cr-registry-summary.agent.md`](./use-cr-registry-summary.agent.md) — summarize CR registry data by total, status, and priority using the CSV summary script.
+  + Keywords: CR summary, status counts, priority breakdown, registry totals, project summary
+  + Target: `**/*.md`, `**/*.py`

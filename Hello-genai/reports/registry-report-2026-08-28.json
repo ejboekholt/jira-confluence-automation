@@ -1,0 +1,37 @@
+{
+  "status": "success",
+  "view": "project",
+  "message": "Generated project-level reporting view from the current CR backlog.",
+  "data": {
+    "summary": {
+      "totalItems": 71,
+      "openItems": 71,
+      "closedItems": 0,
+      "overdueItems": 0,
+      "lastRefresh": "2026-08-28T17:03:20Z"
+    },
+    "filters": {
+      "project": "CR Registry",
+      "status": "open",
+      "source": "Hello-genai/backlog.md"
+    },
+    "metrics": {
+      "byStatus": {
+        "open": 71,
+        "closed": 0
+      },
+      "byPhase": {
+        "Phase 1: Setup": 10,
+        "Phase 2: Core Features": 23,
+        "Phase 3: Integration": 18,
+        "Phase 4: Testing": 10,
+        "Phase 5: Documentation": 10,
+        "Suggested Delivery Sequence": 0
+      }
+    },
+    "notes": [
+      "The backlog file does not include target dates, so overdue calculation is set to 0 and should be recalculated when CR records are available.",
+      "The current view is a backlog-derived project summary, not a production CR registry export."
+    ]
+  }
+}
