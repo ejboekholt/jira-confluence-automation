@@ -25,3 +25,9 @@ Each entry below is an instruction file with a one-line description.
 - [`./instructions/use-cr-registry-summary.agent.md`](./use-cr-registry-summary.agent.md) — summarize CR registry data by total, status, and priority using the CSV summary script.
   + Keywords: CR summary, status counts, priority breakdown, registry totals, project summary
   + Target: `**/*.md`, `**/*.py`
+- [`./instructions/validate-instructions.agent.md`](./validate-instructions.agent.md) — validate instruction files for SRP, scope, consistency, and project conventions.
+  + Keywords: validate instructions, review instructions, instruction SRP, instruction quality, instruction conventions
+  + Target: `instructions/**/*.agent.md`
+- [`./instructions/use-iterative-reread.agent.md`](./use-iterative-reread.agent.md) — process a bounded batch iteratively with rereading and verification between items.
+  + Keywords: Approach 2, iterative reread, process files individually, bounded batch, verify each item
+  + Target: `**/*`
