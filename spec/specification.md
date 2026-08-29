@@ -1,352 +1,438 @@
-# Change Request Registry Specification
+# Weekly Status Report Generator Specification
 
 ## 1. Purpose
 
-The Change Request (CR) Registry is a Jira-first reporting and governance
-application for delivery managers, project leads, and cross-project
-stakeholders. It provides a normalized view of change requests across multiple
-projects, combines Jira metadata with optional governance enrichment, and
-supports filtering, portfolio summaries, snapshots, and exportable reports.
+The Weekly Status Report Generator enables a delivery manager to produce a simple weekly stakeholder email for the Shell SSW team using Jira issue data. The system supports a manual trigger, gathers the relevant Jira issues for one team, and formats them into a one-page, email-ready report without introducing analysis, forecast, or risk-scoring logic.
 
-The system is intended to reduce manual aggregation from spreadsheets and Jira
-boards while making blockers, overdue work, priority, impact, and resource
-implications visible.
+The project is intentionally narrow: its objective is communication clarity for stakeholders, not operational analytics.
 
 ## 2. Scope
 
 ### In scope
 
-- Synchronizing CR metadata from configured Jira projects and filters.
-- Normalizing project-specific Jira values into a common CR model.
-- Storing Jira mappings and governance-only enrichment.
-- Creating, viewing, updating, and filtering CR records.
-- Lifecycle tracking from creation through closure.
-- Portfolio dashboards and summary reporting.
-- Weekly and monthly status snapshots.
-- CSV and shareable report output.
-- Synchronization status, error visibility, and reprocessing.
-- Role-based access for managers, project leads, and read-only stakeholders.
-- Confluence automation for specified governance or report-sharing workflows.
+- Single-team Jira reporting for Shell SSW
+- Manual report generation trigger
+- Jira-only data retrieval
+- One-page stakeholder-ready email output
+- Team-specific Jira project, board, or JQL configuration
+- Basic issue presentation using Jira summary, status, assignee, and update context
+- Human review before email distribution
 
 ### Out of scope
 
-- Full workflow automation for project requests beyond CR tracking.
-- Developer task-level time tracking.
-- Deep custom analytics beyond summary and governance views.
+- Multi-team reporting
+- Automated at-risk detection
+- Risk scoring or issue severity classification
+- Summary metrics or KPI rollups
+- Forecasting or trend analysis
+- Automated email send workflow
+- Portfolio-level reporting
+- Any additional business intelligence features beyond the email draft
 
 ## 3. Users and Permissions
 
 | Role | Capabilities |
 | --- | --- |
-| Delivery manager | View portfolio data, enrich CRs, record decisions, manage snapshots and exports |
-| Project lead | View and update CRs for authorized projects, add governance notes |
-| Governance manager | View cross-project summaries, manage reporting and decision history |
-| Read-only stakeholder | View authorized dashboards, CR details, and shared reports |
-| Administrator | Configure Jira projects, filters, field mappings, schedules, and access |
+| Delivery manager | Trigger report generation, review Jira-based report content, send or share the final email |
+| Shell SSW team lead | Review the generated weekly report and confirm team context |
+| Stakeholder | Receive the emailed weekly status update |
+| Administrator | Configure the Jira project or filter used for Shell SSW report generation |
 
-Authorization MUST be enforced by the backend for every protected operation.
-The frontend MUST NOT be treated as the security boundary.
+The system is designed for a small internal operating model. Role checks are minimal and focused on access to the correct Jira project and report generation settings.
 
 ## 4. Product Principles
 
-- Jira is the primary source of truth for CR metadata whenever a corresponding
-  Jira field exists.
-- Manual governance enrichment MUST be distinguishable from synchronized data
-  and MUST NOT be silently overwritten by synchronization.
-- Inconsistent Jira statuses, priorities, and impact values MUST be mapped to
-  documented canonical values.
-- Failed synchronization MUST be visible and MUST NOT appear as a successful
-  empty result.
-- Reporting results MUST identify their filters, period, and data freshness.
+- Jira is the authoritative source for team issue data.
+- The system must serve one delivery team only: Shell SSW.
+- Reporting output must remain factual and simple.
+- The workflow must be manual and human-reviewed.
+- No additional calculations, scorecards, or status interpretation are required.
+- The report must remain readable in a standard email client without requiring a complex UI.
 
-## 5. User Scenarios
+## 5. User Stories and Use Cases
 
-### Scenario US-01: Review the portfolio
+### User Story US-01: Generate a weekly status report
 
-**Given** the user has portfolio access,  
-**when** they open the dashboard,  
-**then** they can see total CR counts by project, status, priority, and impact,
-including overdue items and the latest successful synchronization time.
+As a delivery manager, I want to manually trigger a weekly report for Shell SSW so that I can prepare a simple status update for stakeholders.
 
-### Scenario US-02: Filter CRs
+Acceptance criteria:
+- The user can click a single action to generate the report.
+- The system retrieves the Jira issues for the configured Shell SSW context.
+- The report is created in a format suitable for email copy/paste.
 
-**Given** CR records are available,  
-**when** a user selects project, status, priority, owner, date range, impact, or
-Jira key filters,  
-**then** the list, counts, and report results reflect the same filter set.
+### User Story US-02: Review the generated content before sending
 
-### Scenario US-03: Inspect a CR
+As a delivery manager, I want to preview the generated report before sending it so that I can confirm it is accurate and suitable for stakeholders.
 
-**Given** a user can view a CR,  
-**when** they open its detail view,  
-**then** they can see normalized metadata, the Jira issue mapping, source
-timestamps, manual enrichment, decision notes, and decision history.
+Acceptance criteria:
+- A preview is displayed with the final draft content.
+- The user can copy or export the plain text body.
+- The user retains final control over sending the email.
 
-### Scenario US-04: Enrich a CR
+### User Story US-03: Configure the team-specific Jira scope
 
-**Given** an authorized manager or project lead is editing an authorized CR,  
-**when** they save governance-only fields or decision notes,  
-**then** the enrichment is validated, attributed to the editor, timestamped, and
-preserved across future Jira synchronizations.
+As an administrator, I want to configure the Jira project or filter representing Shell SSW so that only the correct team’s work appears in the report.
 
-### Scenario US-05: Synchronize Jira
+Acceptance criteria:
+- The Jira target is stored as configuration.
+- The report generation logic uses only the configured issue set.
+- Invalid or missing configuration is surfaced as a clear error.
 
-**Given** an administrator has configured a Jira project and field mapping,  
-**when** a scheduled or manual synchronization runs,  
-**then** eligible Jira issues are fetched, normalized, upserted by Jira key, and
-the run records its start time, completion time, result, counts, and errors.
+### User Story US-04: Handle Jira failures safely
 
-### Scenario US-06: Recover a failed synchronization
+As a delivery manager, I want failures in Jira access or data retrieval to be explicit so that I am not sent a misleading or incomplete report.
 
-**Given** a synchronization failed or partially completed,  
-**when** an administrator selects a project or date range for reprocessing,  
-**then** the system retries that bounded scope and reports which records
-succeeded, failed, or were skipped.
+Acceptance criteria:
+- Failed Jira calls return a readable error.
+- No report is generated from incomplete data.
+- The user can retry once the issue is corrected.
 
-### Scenario US-07: Track a lifecycle decision
+### Use Case UC-01: Build a weekly report for stakeholders
 
-**Given** an authorized editor is reviewing a CR,  
-**when** they change its lifecycle state or record accepted, rejected, or
-deferred outcome information,  
-**then** the new state is validated and the prior state and decision are retained
-in an audit history.
+1. The user opens the application.
+2. The user clicks “Generate weekly report”.
+3. The frontend requests the report generation endpoint.
+4. The backend fetches Jira issues for the configured Shell SSW scope.
+5. The backend transforms the data into a plain text or Markdown email body.
+6. The user reviews the preview.
+7. The user copies the content into email or shares it with stakeholders.
 
-### Scenario US-08: Create a reporting snapshot
+### Use Case UC-02: Change Jira team context
 
-**Given** a user has reporting access,  
-**when** they select a weekly or monthly period and create a snapshot,  
-**then** the system stores the filtered counts and freshness context so the
-historical report remains reproducible.
+1. The administrator opens settings.
+2. The administrator updates the Jira project, board, or JQL used for Shell SSW.
+3. The system validates the configuration.
+4. The new configuration is stored and used for future report generation.
 
-### Scenario US-09: Export a report
+## 6. API Endpoints
 
-**Given** a user has export access,  
-**when** they export the current filtered results,  
-**then** the system produces a CSV or shareable report containing the selected
-period, filters, generated timestamp, and applicable data freshness.
+The backend exposes a minimal API focused on report generation and configuration. The API is intentionally small and does not include analytics or automated scheduling endpoints.
 
-## 6. Functional Requirements
+### 6.1 Authentication and headers
 
-### 6.1 Jira ingestion and normalization
+- All endpoints are protected by standard backend session or token handling as required by the deployment environment.
+- The frontend sends JSON payloads for write operations.
+- Responses use JSON with a consistent status contract.
 
-- Administrators MUST be able to configure Jira projects, issue filters, field
-  mappings, and synchronization cadence.
-- The ingestion layer MUST support pagination and large Jira result sets.
-- Each eligible Jira issue MUST be upserted using its Jira issue key as the
-  stable external identifier.
-- The normalizer MUST map project-specific statuses and priorities to the
-  canonical model and retain the original source values where useful.
-- Missing, malformed, or conflicting fields MUST be recorded as data-quality
-  issues.
-- Jira API failures, authentication failures, rate limits, and partial runs
-  MUST be visible in synchronization history.
+### 6.2 Endpoint contract
 
-### 6.2 CR record management
+| Method | Endpoint | Purpose | Request payload | Response |
+| --- | --- | --- | --- | --- |
+| GET | /api/health | Confirm backend availability | None | `200 OK` with service status |
+| GET | /api/config/team | Return saved Shell SSW Jira configuration | None | Team config including project, board, or JQL |
+| PUT | /api/config/team | Update the Shell SSW Jira configuration | `{ teamName, jiraProjectKey, jiraBoardId, jiraJql }` | Updated config object or validation error |
+| POST | /api/reports/generate | Generate a fresh weekly report | `{ teamId?: string, jiraContext?: object }` | Report object with status, preview content, and metadata |
+| GET | /api/reports/latest | Fetch the most recent generated report | None | Latest report draft and timestamps |
+| GET | /api/reports/:id | Fetch a specific generated report | None | Saved report content and metadata |
 
-- Authorized users MUST be able to create a CR when a Jira issue is not yet
-  available, provided required fields and source status are explicit.
-- Authorized users MUST be able to update permitted manual and governance
-  fields.
-- Jira-sourced fields MUST be read-only in manual editing unless an explicit
-  override policy is specified.
-- The system MUST flag CRs without a Jira link where a link is expected.
-- The system MUST highlight stale records and records past their target date.
-- All changes to lifecycle state, decision outcome, governance notes, and Jira
-  mapping MUST be auditable.
+### 6.3 Request and response details
 
-### 6.3 Lifecycle
+#### GET /api/config/team
 
-The canonical lifecycle states MUST include:
+Returns:
 
-1. New
-2. Under review
-3. Approved
-4. Rejected
-5. In progress
-6. On hold
-7. Completed
-8. Cancelled
-
-Transitions MUST be validated. The system MUST allow accepted, rejected, or
-deferred decision outcomes and retain decision notes and history.
-
-### 6.4 Search, filtering, and views
-
-The CR list and all reporting views MUST support filtering by:
-
-- Project
-- Lifecycle status
-- Priority
-- Owner
-- Requested date or target date range
-- Impact area
-- Jira issue key or project reference
-
-Filters MUST support deterministic pagination, clear empty states, and
-consistent totals. Invalid filter values MUST return a clear validation error.
-
-### 6.5 Reporting and dashboard
-
-The reporting service MUST provide:
-
-- Total CR count by project.
-- CR count by lifecycle status.
-- CR count by priority.
-- Overdue CRs.
-- CRs opened or closed during a selected period.
-- Trend summaries over time.
-- Synchronization freshness and failure indicators.
-
-Dashboard queries SHOULD refresh within a few seconds for typical filtered
-portfolio views. Report calculations MUST use normalized, validated records.
-
-### 6.6 Snapshots and exports
-
-- Users with reporting access MUST be able to create weekly or monthly
-  snapshots.
-- A snapshot MUST preserve its period, filters, aggregate values, creation
-  timestamp, and data freshness context.
-- CSV exports MUST include stable column names and dates in a documented format.
-- Shareable reports MUST avoid exposing data beyond the requesting user's
-  authorization scope.
-- Export failures MUST be reported to the user and logged.
-
-### 6.7 Confluence automation
-
-Where enabled by project configuration, the system MAY publish approved
-governance snapshots or shareable reports to Confluence. Publication MUST
-respect destination permissions, identify the source snapshot, and report
-success or failure without losing the stored snapshot.
-
-### 6.8 Administration
-
-Administrators MUST be able to manage:
-
-- Jira project and filter inclusion.
-- Jira-to-canonical field mappings.
-- Synchronization cadence.
-- Canonical value mappings for status, priority, and impact.
-- Reprocessing scope and synchronization history.
-- Authorized roles and project access.
-
-## 7. Data Model
-
-### 7.1 Change Request
-
-```text
-CR {
-  id: string
-  title: string
-  project: string
-  status: enum
-  owner: string
-  impact: string
-  priority: string
-  requestedDate: date
-  targetDate: date | null
-  summary: string
-  decisionNotes: string | null
-  decisionOutcome: accepted | rejected | deferred | null
-  jiraIssueKey: string | null
-  jiraProjectKey: string | null
-  sourceValues: object
-  lastSyncedAt: datetime | null
-  lastUpdated: datetime
-  createdAt: datetime
+```json
+{
+  "teamName": "Shell SSW",
+  "jiraProjectKey": "SSW",
+  "jiraBoardId": "123",
+  "jiraJql": "project = SSW AND sprint in openSprints()",
+  "updatedAt": "2026-08-29T12:00:00Z"
 }
 ```
 
-### 7.2 Supporting entities
+#### PUT /api/config/team
 
-- **Project configuration:** project key, enabled flag, issue filter, field
-  mappings, synchronization cadence, and access scope.
-- **Synchronization run:** scope, status, timestamps, processed count,
-  created count, updated count, skipped count, error count, and error details.
-- **Decision history:** CR, prior and new status/outcome, notes, actor,
-  timestamp, and source.
-- **Status snapshot:** period, filters, aggregate values, source freshness,
-  creator, and creation timestamp.
-- **User access:** user identity, role, and authorized project scope.
-- **Data-quality issue:** CR or synchronization run, field, severity,
-  description, status, and resolution metadata.
+Request body:
 
-## 8. API and Integration Contracts
+```json
+{
+  "teamName": "Shell SSW",
+  "jiraProjectKey": "SSW",
+  "jiraBoardId": "123",
+  "jiraJql": "project = SSW AND sprint in openSprints()"
+}
+```
 
-The Express backend MUST expose versioned JSON APIs for:
+Validation rules:
+- Exactly one Jira scoping method is required: project key, board ID, or JQL.
+- The project or JQL must represent the Shell SSW team only.
+- Empty or invalid values must return `400 Bad Request`.
 
-- CR list, detail, create, and update operations.
-- Filter options and canonical value mappings.
-- Dashboard summaries, trends, overdue results, and period comparisons.
-- Snapshot creation and retrieval.
-- CSV/shareable report generation.
-- Synchronization status, manual execution, and bounded reprocessing.
-- Administration of Jira project and field configuration.
-- Authentication, authorization, and current-user context.
+#### POST /api/reports/generate
 
-API responses MUST use consistent success and error shapes, validate input, and
-return appropriate HTTP status codes. The React client MUST consume shared
-contracts rather than duplicating domain definitions.
+Request body:
 
-## 9. Non-Functional Requirements
+```json
+{
+  "teamId": "shell-ssw"
+}
+```
 
-### Performance
+Successful response:
 
-- Support multiple active projects and a portfolio of at least 150 people.
-- Typical filtered dashboard views SHOULD complete within a few seconds.
-- Large Jira exports MUST be paginated and processed without blocking
-  interactive requests.
+```json
+{
+  "id": "rpt_123",
+  "status": "generated",
+  "generatedAt": "2026-08-29T12:10:00Z",
+  "subject": "Weekly Status Report - Shell SSW",
+  "body": "Hello stakeholders,\n\nHere is this week\'s update...",
+  "issues": [
+    {
+      "key": "SSW-101",
+      "summary": "Implement Jira report generator",
+      "status": "In Progress",
+      "assignee": "Jane Doe",
+      "updatedAt": "2026-08-28T09:00:00Z"
+    }
+  ]
+}
+```
 
-### Reliability
+Error response:
 
-- Synchronization MUST run on a configured cadence and support manual runs.
-- Runs MUST be idempotent for the same Jira issue and source revision.
-- Failures MUST be logged, visible, and reprocessable.
-- Database migrations MUST be repeatable and reviewed.
+```json
+{
+  "status": "error",
+  "message": "Unable to retrieve Jira issues for the configured Shell SSW scope."
+}
+```
 
-### Security
+### 6.4 Backend responsibilities
 
-- Backend authorization MUST enforce role and project scope.
-- Secrets MUST be provided through environment or secret-management facilities.
-- Jira, Confluence, and database credentials MUST NOT be committed or logged.
-- Logs and exports MUST avoid unnecessary sensitive data.
-- Shareable reports MUST be authorization-scoped.
+- The backend is responsible for Jira access and report content assembly.
+- The backend must validate configuration before making Jira calls.
+- The backend must format and return the email-ready content in plain text or Markdown.
+- The backend must not add risk labels, summary calculations, or other interpretation.
 
-### Data quality
+## 7. UI Screens
 
-- Required fields MUST be enforced at API and database boundaries.
-- Missing Jira links, stale records, overdue target dates, and unmapped source
-  values MUST be surfaced.
-- Synchronization MUST retain enough source context to diagnose mapping issues.
+The frontend is intentionally simple and focused on a single workflow: configure the scope, trigger generation, and review the report.
 
-## 10. Acceptance Criteria
+### Screen UI-01: Weekly report dashboard
 
-1. Users can create, update, view, and filter CRs by all specified dimensions.
-2. Jira metadata is automatically loaded from configured projects and mapped
-   into the normalized CR model.
-3. Manual governance enrichment survives subsequent synchronization.
-4. The dashboard provides project, status, priority, overdue, period, and trend
-   summaries from current normalized data.
-5. Weekly and monthly snapshots preserve their reporting context.
-6. Reports can be exported as CSV or a properly scoped shareable report.
-7. A CR lifecycle can be tracked from New through closure or cancellation with
-   decision history.
-8. Failed synchronizations are visible and can be reprocessed for a project or
-   date range.
-9. Role-based permissions prevent unauthorized edits and data exposure.
-10. The system meets the target portfolio and typical dashboard response
-    expectations.
+Purpose:
+- Provide the main entry point for report generation.
 
-## 11. Assumptions and Open Decisions
+Elements:
+- Page title: “Weekly Status Report”
+- Team name label: “Shell SSW”
+- “Generate weekly report” action button
+- Status indicator for last report time
+- Link or button to open previous report preview
+- Error banner for Jira or config problems
 
-- The exact Jira projects, issue types, custom fields, and CR identification
-  rules must be confirmed before implementation.
-- The canonical priority and impact vocabularies must be agreed with project
-  stakeholders.
-- The authentication provider and user-to-project access source must be
-  selected during technical planning.
-- The Confluence publication format, destination spaces, and page ownership
-  rules require confirmation.
-- The reporting timezone, date format, and definition of “stale” require
-  explicit configuration.
-- A pilot with two or three projects should validate mappings and data quality
-  before portfolio-wide rollout.
+### Screen UI-02: Report preview
+
+Purpose:
+- Display the generated email content before it is sent.
+
+Elements:
+- Subject line
+- Email body preview in plain text or Markdown render
+- List of Jira issues included in the report
+- Copy to clipboard button
+- Return to dashboard button
+
+### Screen UI-03: Team configuration screen
+
+Purpose:
+- Maintain the Jira context used for the report.
+
+Elements:
+- Team name field
+- Jira project key field
+- Jira board ID field
+- Jira JQL field
+- Save configuration action
+- Validation message for invalid configuration
+
+### Screen UI-04: Error state
+
+Purpose:
+- Surface failures clearly and without ambiguity.
+
+Elements:
+- Message: “Unable to retrieve Jira issues for the configured team.”
+- Retry button
+- Guidance to verify the Jira project or JQL configuration
+
+### Screen states
+
+- Empty state: no report has been generated yet
+- Loading state: report is being assembled from Jira
+- Success state: preview shows the generated email content
+- Error state: Jira configuration or API failure is displayed
+
+## 8. Data Model
+
+The database remains intentionally lightweight. It stores only configuration and operational metadata required for the report workflow.
+
+### 8.1 Table: team_settings
+
+Stores the Jira scope for the Shell SSW team.
+
+| Column | Type | Description |
+| --- | --- | --- |
+| id | SERIAL / UUID | Primary key |
+| team_name | VARCHAR(100) | Fixed value such as “Shell SSW” |
+| jira_project_key | VARCHAR(50) | Jira project key, if used |
+| jira_board_id | VARCHAR(50) | Jira board ID, if used |
+| jira_jql | TEXT | JQL filter representing the team scope |
+| is_active | BOOLEAN | Marks the active team configuration |
+| created_at | TIMESTAMP | Record creation time |
+| updated_at | TIMESTAMP | Last update time |
+
+Notes:
+- Only one active team configuration is expected.
+- The database stores the Jira scoping configuration, not the report content itself.
+
+### 8.2 Table: report_runs
+
+Stores each report generation event and associated metadata.
+
+| Column | Type | Description |
+| --- | --- | --- |
+| id | SERIAL / UUID | Primary key |
+| team_setting_id | INTEGER / UUID | Reference to the active team configuration |
+| status | VARCHAR(20) | `generated`, `failed`, or `partial` |
+| subject | VARCHAR(255) | Report subject line |
+| generated_at | TIMESTAMP | When the report was created |
+| error_message | TEXT | Optional error text if generation failed |
+| issue_count | INTEGER | Number of Jira issues included |
+| created_at | TIMESTAMP | Record creation time |
+
+Notes:
+- This table supports auditability and allows the user to view recent report activity.
+- It does not include analytics or rollups.
+
+### 8.3 Table: report_issues
+
+Stores the Jira issue list used in the generated report.
+
+| Column | Type | Description |
+| --- | --- | --- |
+| id | SERIAL / UUID | Primary key |
+| report_run_id | INTEGER / UUID | Parent report run |
+| jira_issue_key | VARCHAR(50) | Jira issue key |
+| summary | TEXT | Jira issue title |
+| status | VARCHAR(100) | Jira current status |
+| assignee | VARCHAR(200) | Human-readable assignee name |
+| updated_at | TIMESTAMP | Jira issue last update timestamp |
+| created_at | TIMESTAMP | Record creation time |
+
+Notes:
+- This table keeps a snapshot of the issue list for each report run.
+- It preserves the factual Jira data used in the email body.
+
+### 8.4 Data retention guidance
+
+- Keep data only as needed for operational auditability.
+- Store the latest active team configuration and recent report run records.
+- Do not add derived metrics or historical trend tables in v1.
+
+## 9. Functional Requirements
+
+### 9.1 Jira data retrieval
+
+- The system MUST allow configuration of a single Jira project, board, or JQL filter that corresponds to the Shell SSW team.
+- The system MUST fetch Jira issues only for that configured team context.
+- The system MUST support a manual trigger to generate a report from the current Jira state.
+- The data retrieval layer MUST support authentication via environment-managed credentials and must not expose secrets in logs or UI output.
+- The system MUST retrieve only the fields needed for communication, such as:
+  - issue key
+  - issue summary
+  - current status
+  - assignee
+  - last updated date, if used for context
+
+### 9.2 Report composition
+
+- The generated output MUST be a simple email body or Markdown-formatted draft.
+- The report MUST fit on a single page in a standard email client.
+- The report MUST include a clear subject line and a concise summary introduction.
+- The report MUST present Jira issues in a readable, stakeholder-friendly format.
+- The system MUST not calculate totals, scores, percentages, or status summaries.
+- The report MUST not include deduced risk levels or at-risk indicators.
+- The system MUST not add any analytical interpretation beyond the raw Jira issue data.
+
+### 9.3 User interaction
+
+- The front end MUST provide a button or action to generate a report manually.
+- The application MUST display a report preview before final delivery.
+- The user MUST be able to copy the generated content into an email or export it as plain text or Markdown.
+- The system MUST preserve a human review step before the report is distributed.
+
+### 9.4 Data quality and validation
+
+- The system MUST validate the configured Jira team context before generating a report.
+- The system MUST fail clearly if Jira data cannot be retrieved or the project scope is invalid.
+- Empty issue lists MUST be handled explicitly and shown as a valid but empty result rather than silently treated as success.
+- The system MUST retain the raw Jira issue data in the report output without applying unsupported classification.
+
+## 10. Non-Functional Requirements
+
+### 10.1 Simplicity
+
+- The initial implementation MUST remain intentionally minimal.
+- The system MUST support only one team and one Jira scope.
+- The codebase MUST avoid unnecessary abstractions or advanced analytics components.
+
+### 10.2 Reliability
+
+- The system MUST handle missing or transient Jira access issues without crashing.
+- Errors MUST be surfaced to the user in a clear and actionable way.
+- The report generation flow MUST be repeatable and deterministic for the same Jira state.
+
+### 10.3 Performance
+
+- Typical report generation for the Shell SSW team should complete quickly enough for ad hoc weekly use.
+- The system should avoid unnecessary data processing beyond the required Jira fields and formatting logic.
+
+### 10.4 Security and configuration
+
+- Jira credentials and API tokens MUST be managed via environment variables or secure deployment configuration.
+- Secrets MUST NOT be stored in source code or committed into the repository.
+- The system MUST avoid exposing internal Jira configuration in end-user views.
+
+### 10.5 Maintainability
+
+- Jira fetch logic and report formatting logic MUST be separated into distinct modules or services.
+- The project MUST keep the frontend and backend responsibilities clear.
+- A future update should be able to replace the Jira filter or report format without rewriting the whole application.
+
+## 11. Technical Baseline
+
+- Frontend: React 18 with Vite
+- Backend: Node.js with Express
+- Database: PostgreSQL 15, running via Docker
+- Local orchestration: Docker Compose
+- Data source: Jira only
+- Output format: plain text or Markdown for email copy/paste
+
+## 12. Data Contracts
+
+The system stores minimal metadata required for configuration and report traceability:
+
+- configured team name
+- configured Jira project or JQL filter
+- last successful generation timestamp
+- last error message, if any
+- snapshot of Jira issues used in the most recent generated report
+
+The database MUST remain lightweight and must not be used to perform analytics or scoring. It exists to support configuration and operational traceability, not reporting intelligence.
+
+## 13. Acceptance Criteria
+
+- A user can trigger a report generation manually.
+- The system fetches Jira issues for the configured Shell SSW team only.
+- The generated output is a one-page, email-ready weekly status draft.
+- The draft includes factual Jira issue details without extra interpretation.
+- The system does not produce at-risk detection, summary calculations, or forecast logic.
+- The user can review the output before sending it.
+- The system handles Jira configuration or access errors with clear messaging and no silent failure.
+
+## 14. Project Principles for Future Change
+
+This project must remain within its original scope. Any future request to add dashboards, scorecards, portfolio views, risk modeling, or automated sending must be treated as a new product decision and a separate specification change.
