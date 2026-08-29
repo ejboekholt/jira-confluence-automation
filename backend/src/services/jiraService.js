@@ -1,6 +1,24 @@
+function normalizeJiraBaseUrl(baseUrl = '') {
+  const rawUrl = String(baseUrl || '').trim();
+
+  if (!rawUrl) {
+    return '';
+  }
+
+  try {
+    return new URL(rawUrl).origin;
+  } catch {
+    try {
+      return new URL(`https://${rawUrl}`).origin;
+    } catch {
+      return rawUrl.replace(/\/+$/, '').replace(/\/.*$/, '');
+    }
+  }
+}
+
 function getJiraConfig() {
   return {
-    baseUrl: process.env.JIRA_BASE_URL || '',
+    baseUrl: normalizeJiraBaseUrl(process.env.JIRA_BASE_URL || ''),
     email: process.env.JIRA_EMAIL || '',
     apiToken: process.env.JIRA_API_TOKEN || '',
   };
@@ -24,7 +42,7 @@ async function fetchProjectIssues() {
   const { baseUrl, email, apiToken } = getJiraConfig();
 
   if (!baseUrl) {
-    throw new Error('JIRA_BASE_URL is required');
+    throw new Error('JIRA_BASE_URL is required. Use the Jira instance origin such as https://jiraeu.epam.com, not a board URL.');
   }
 
   if (!email) {
@@ -67,5 +85,6 @@ async function fetchProjectIssues() {
 module.exports = {
   buildProjectJql,
   normalizeIssue,
+  normalizeJiraBaseUrl,
   fetchProjectIssues,
 };

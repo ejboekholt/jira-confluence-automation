@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildProjectJql, fetchProjectIssues, normalizeIssue } = require('./jiraService');
+const { buildProjectJql, fetchProjectIssues, normalizeIssue, normalizeJiraBaseUrl } = require('./jiraService');
 
 const originalFetch = global.fetch;
 
@@ -41,6 +41,14 @@ test('normalizeIssue maps Jira fields to the report model', () => {
     assignee: 'Jane Doe',
     lastUpdated: '2026-08-01T10:00:00.000Z',
   });
+});
+
+test('normalizeJiraBaseUrl strips board URLs to the Jira instance origin', () => {
+  assert.equal(
+    normalizeJiraBaseUrl('https://jiraeu.epam.com/secure/RapidBoard.jspa?rapidView=323051&projectKey=SHELSSW&quickFilter=1142612#'),
+    'https://jiraeu.epam.com'
+  );
+  assert.equal(normalizeJiraBaseUrl('https://jiraeu.epam.com'), 'https://jiraeu.epam.com');
 });
 
 test('fetchProjectIssues calls Jira with the required project and filter', async () => {
