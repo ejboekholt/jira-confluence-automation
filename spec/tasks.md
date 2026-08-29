@@ -1,557 +1,208 @@
-# CR Registry Implementation Tasks
+# Weekly Status Report Generator Tasks
 
-This task breakdown follows [`plan.md`](./plan.md), [`specification.md`](./specification.md),
-and [`constitution.md`](./constitution.md). Tasks are ordered by dependency.
-Release-2 clarification items are tracked separately and are not Release-1
-implementation tasks.
+This task list breaks the implementation plan into executable work items for the v1 release. Each item includes a title, description, acceptance criteria, and dependency list.
 
-## Phase 1 — Backend setup
+## Task 1: Initialize the backend project skeleton
 
-### T-001 — Confirm Release-1 scope and pilot
+Description:
+Set up the Node.js + Express backend and the minimum application structure for the weekly status report generator. The backend should remain intentionally small and should not include a database in v1.
 
-**Depends on:** None  
-**Owner boundary:** `spec/`
+Acceptance criteria:
+- A working Express application starts successfully in local development.
+- The backend contains separate app, server, route, controller, and service modules.
+- A `/api/health` endpoint responds successfully.
+- No database layer is added for the v1 scope.
 
-**Description**
+Dependencies:
+- None
 
-Document the pilot Jira projects, issue types, filters, source fields,
-canonical values, minimum access boundary, environment variables, acceptance
-dataset, and measurable response targets.
+---
 
-**Acceptance criteria**
+## Task 2: Configure Jira connectivity and local environment
 
-- Pilot scope names two or three candidate projects or records the approved
-  smaller pilot.
-- Required Jira fields and CR identification assumptions are documented.
-- Release-1 versus Release-2 scope is explicit.
-- Dashboard response and synchronization targets are measurable.
+Description:
+Add the minimal configuration needed to connect the backend to Jira for the Shell SSW project. Keep the configuration static and minimal, with no role-based access or extra infrastructure.
 
-### T-002 — Complete requirement traceability matrix
+Acceptance criteria:
+- Required Jira settings are defined in environment variables or a minimal config file.
+- The backend can make a valid Jira API request using the configured credentials.
+- Local setup instructions are clear and do not require additional runtime complexity.
 
-**Depends on:** T-001  
-**Owner boundary:** `spec/`
+Dependencies:
+- Task 1
 
-**Description**
+---
 
-Map each Release-1 requirement to its frontend feature, backend route/service,
-shared contract, migration, and test.
+## Task 3: Fetch Jira issues for the correct project and time window
 
-**Acceptance criteria**
+Description:
+Implement the Jira query logic to pull only the issues relevant to the weekly report: project `SHELSSW`, last 7 calendar days, and required field data for the result list.
 
-- Every Release-1 acceptance criterion has at least one implementation and test
-  destination.
-- The matrix identifies the owning repository boundary.
-- Missing decisions are linked to `clarify.md` rather than silently assumed.
+Acceptance criteria:
+- The backend requests issues only from the `SHELSSW` project.
+- Only issues updated in the last 7 calendar days are included.
+- The backend retrieves the fields required for final report rendering.
+- Any non-project or unrelated issue data is excluded before formatting.
 
-### T-003 — Configure monorepo workspaces
+Dependencies:
+- Task 2
 
-**Depends on:** T-002  
-**Owner boundary:** repository root, `apps/`, `packages/`
+---
 
-**Description**
+## Task 4: Apply v1 issue filters
 
-Configure package workspaces and root scripts for frontend, backend, shared
-packages, database, formatting, linting, type checking, and tests.
+Description:
+Implement the exact v1 filtering rules used for the weekly status report: only Story issues and only the statuses `To Do`, `In Progress`, and `Done`.
 
-**Acceptance criteria**
+Acceptance criteria:
+- Only Story issues are included in the report.
+- Only `To Do`, `In Progress`, and `Done` are included.
+- Closed items remain in the same flat list as active items.
+- No summary logic, grouping, or extra filtering is added.
 
-- A clean checkout installs dependencies through the documented root command.
-- Workspace packages resolve without ad-hoc relative imports.
-- Root scripts invoke each approved project quality check.
+Dependencies:
+- Task 3
 
-### T-004 — Configure backend and shared packages
+---
 
-**Depends on:** T-003  
-**Owner boundary:** `apps/backend`, `packages/`
+## Task 5: Transform Jira data into the report model
 
-**Description**
+Description:
+Normalize the Jira results into the exact data model required for the weekly report: issue key, summary, status, assignee, and last update timestamp.
 
-Configure Node.js/Express backend package metadata, shared package entry points,
-and the React 18/Vite package baseline.
+Acceptance criteria:
+- Each output item contains the required five fields.
+- Missing assignee or update values are handled predictably and remain visible in the payload.
+- The data shape matches the planned output contract for the frontend.
+- No extra analytics or computed values are added.
 
-**Acceptance criteria**
+Dependencies:
+- Task 4
 
-- Backend starts through a documented development command.
-- Shared package entry points are importable by backend and frontend.
-- Required dependency versions are explicit in manifests.
+---
 
-### T-005 — Add typed environment configuration
+## Task 6: Implement the plain-text report formatter
 
-**Depends on:** T-003  
-**Owner boundary:** `apps/backend/src/config`, `packages/config`
+Description:
+Transform the filtered issue list into a plain-text email draft for the stakeholder report. The output should remain one page and factual.
 
-**Description**
+Acceptance criteria:
+- The output is plain text suitable for email copy/paste.
+- Each item includes issue key, summary, status, assignee, and last update.
+- The result contains no summary block, no group headings, and no risk or score logic.
+- The format is consistent and readable in a standard mail client.
 
-Define environment loading and validation for database, Jira, application,
-logging, and frontend API configuration.
+Dependencies:
+- Task 5
 
-**Acceptance criteria**
+---
 
-- `.env.example` lists every required variable without real secrets.
-- Missing required production configuration fails clearly at startup.
-- Tests can provide isolated configuration without production credentials.
+## Task 7: Expose the generate report API endpoint
 
-### T-006 — Run PostgreSQL 15 through Docker
+Description:
+Add the backend endpoint that generates the report and sends the report payload back to the frontend. If Jira data retrieval fails, the endpoint should return the raw system error.
 
-**Depends on:** T-003  
-**Owner boundary:** `docker-compose.yml`, `database/`
+Acceptance criteria:
+- `POST /api/reports/generate` exists and returns the generated report payload.
+- The response includes subject, team name, generated time, issue list, and body text.
+- On Jira failure, the raw error message is returned directly in the response.
+- There is no database or auth flow added for v1.
 
-**Description**
+Dependencies:
+- Task 6
 
-Add a PostgreSQL 15 Compose service with persistent local storage, health
-checks, safe development defaults, and documented startup/shutdown commands.
+---
 
-**Acceptance criteria**
+## Task 8: Initialize the React + Vite frontend
 
-- PostgreSQL starts successfully through Docker Compose.
-- The health check reports readiness.
-- Data persists across a container restart.
-- Credentials are supplied through environment configuration.
+Description:
+Set up the React 18 + Vite frontend app and base shell for the report workflow. Keep the app focused on a single report screen with minimal structure.
 
-### T-007 — Create backend health and readiness endpoints
+Acceptance criteria:
+- The frontend starts successfully in local development.
+- The app uses React 18 and Vite.
+- The project contains a basic shell and page layout for the report workflow.
+- No login, role model, or unrelated screens are introduced.
 
-**Depends on:** T-004, T-005, T-006  
-**Owner boundary:** `apps/backend/src/routes`
+Dependencies:
+- None
 
-**Description**
+---
 
-Add unauthenticated health and dependency-readiness checks appropriate for local
-development and operations.
+## Task 9: Build the weekly report page UI
 
-**Acceptance criteria**
+Description:
+Create the single-page UI that lets the delivery manager generate a report and review the resulting plain-text draft.
 
-- Health responds when the process is alive.
-- Readiness reports database unavailability explicitly.
-- Responses use the documented API response/error shape.
+Acceptance criteria:
+- The page shows a title and a `Generate weekly report` button.
+- A preview area displays the generated email draft.
+- The page remains intentionally simple and does not include dashboard or analytics elements.
+- The layout supports copy/paste into email without additional UI complexity.
 
-### T-008 — Define and migrate the Release-1 database schema
+Dependencies:
+- Task 8
 
-**Depends on:** T-006, T-001  
-**Owner boundary:** `database/migrations`, `database/schema`
+---
 
-**Description**
+## Task 10: Connect the frontend to the backend endpoint
 
-Create tables for CRs, project configuration, field mappings, synchronization
-runs, data-quality issues, decision history, snapshots, users/access scope, and
-required supporting metadata.
+Description:
+Wire the generate button to the backend report API so the user can trigger the report generation from the UI immediately.
 
-**Acceptance criteria**
+Acceptance criteria:
+- Clicking the button triggers a request to `/api/reports/generate`.
+- A loading state is shown while the report is being generated.
+- The response data is displayed in the preview pane.
+- The user can regenerate the report at any time with the same button.
 
-- Migrations apply cleanly to an empty PostgreSQL 15 database.
-- Jira issue keys are stable and duplicate-free.
-- Nullability, foreign keys, timestamps, and canonical lifecycle constraints are
-  explicit.
-- Indexes cover project, status, priority, owner, date, and Jira-key queries.
+Dependencies:
+- Task 7
+- Task 9
 
-### T-009 — Add seed data and repository contracts
+---
 
-**Depends on:** T-008  
-**Owner boundary:** `database/seeds`, backend repositories
+## Task 11: Implement plain error handling in the UI
 
-**Description**
+Description:
+Handle any Jira or backend failure state so the user sees the raw system error message without additional formatting or misleading fallback content.
 
-Add pilot configuration/canonical mappings and repository interfaces for CR,
-configuration, sync, quality, history, and snapshot data.
+Acceptance criteria:
+- If the backend returns an error, the UI displays the raw error message.
+- The error appears in a simple visible state rather than hiding the failure.
+- The user can retry the report generation after the error occurs.
 
-**Acceptance criteria**
+Dependencies:
+- Task 10
 
-- Seed data is repeatable and contains no credentials.
-- Repository methods cover the Release-1 use cases.
-- Repository integration tests pass against PostgreSQL.
+---
 
-## Phase 2 — Frontend setup
+## Task 12: Run end-to-end smoke tests for the v1 workflow
 
-### T-010 — Configure React 18/Vite application shell
+Description:
+Verify the full manual report workflow from button click through Jira fetch, filtering, formatting, and preview display.
 
-**Depends on:** T-003, T-005  
-**Owner boundary:** `apps/frontend`
+Acceptance criteria:
+- The app loads correctly.
+- The user can generate the weekly report with one click.
+- The preview shows only the allowed issue set for `SHELSSW`.
+- The returned content matches the approved rules for date range, story-only filtering, and status list.
 
-**Description**
+Dependencies:
+- Task 11
 
-Configure the frontend entry point, application shell, styling baseline,
-development proxy/API base URL, and shared package imports.
+---
 
-**Acceptance criteria**
+## Task 13: Final scope compliance review
 
-- Frontend starts through the documented command.
-- The shell renders without implementation-specific feature logic.
-- API configuration is environment-driven and documented.
+Description:
+Review the implementation against the v1 specification and confirm no out-of-scope features have been introduced.
 
-### T-011 — Add frontend routing and user context
+Acceptance criteria:
+- The tool is limited to a single team and single-user workflow.
+- No database, auth, risk analysis, scoring, send-email automation, or analytics features are present.
+- The generated result is a one-page plain-text draft suitable for manual email use.
+- The project is ready for stakeholder use under the approved v1 scope.
 
-**Depends on:** T-010, T-007  
-**Owner boundary:** `apps/frontend/src/app`, `pages`
-
-**Description**
-
-Add routes and placeholders for CRs, dashboard, reports, administration, and
-access-denied states.
-
-**Acceptance criteria**
-
-- Required routes render through the application shell.
-- Protected-route and current-user boundaries are explicit.
-- Unknown routes show a controlled not-found state.
-
-### T-012 — Add shared API client and UI state conventions
-
-**Depends on:** T-010, T-004  
-**Owner boundary:** frontend `services`, `hooks`, `types`
-
-**Description**
-
-Create the API client boundary and reusable loading, empty, error, retry, and
-permission-denied state patterns.
-
-**Acceptance criteria**
-
-- API calls use shared contracts and consistent error parsing.
-- Components do not directly access persistence or integration internals.
-- Loading and failure states are testable without live Jira credentials.
-
-## Phase 3 — Feature implementation
-
-### T-013 — Implement Jira client adapter
-
-**Depends on:** T-005, T-009  
-**Owner boundary:** `apps/backend/src/services/jira`
-
-**Description**
-
-Implement configured Jira retrieval with pagination, timeouts, bounded retries,
-structured errors, and source metadata retention.
-
-**Acceptance criteria**
-
-- Adapter requests pages until the configured result set is complete.
-- Timeout, authentication, rate-limit, and network failures are explicit.
-- Tests cover pagination and representative failure responses.
-
-### T-014 — Implement Jira normalization and upsert
-
-**Depends on:** T-008, T-009, T-013  
-**Owner boundary:** backend Jira/registry services
-
-**Description**
-
-Normalize Jira issues into the CR model and upsert by Jira issue key while
-preserving source values and manual governance fields.
-
-**Acceptance criteria**
-
-- Reprocessing the same issue does not create duplicates.
-- Canonical lifecycle and configured mappings are applied.
-- Source and manual fields remain distinguishable.
-- Missing or unmapped fields create data-quality records.
-
-### T-015 — Implement synchronization runs and jobs
-
-**Depends on:** T-013, T-014  
-**Owner boundary:** `apps/backend/src/jobs`
-
-**Description**
-
-Add scheduled/manual synchronization entry points, run counters, status,
-timestamps, structured errors, and pilot-scope reprocessing.
-
-**Acceptance criteria**
-
-- A run records start, completion, result, counts, and errors.
-- Successful, partial, and failed runs are distinguishable.
-- A bounded reprocessing request reports succeeded, failed, and skipped records.
-- Overlapping runs are handled explicitly for the Release-1 design.
-
-### T-016 — Implement CR registry API
-
-**Depends on:** T-009, T-007  
-**Owner boundary:** backend routes/controllers/registry service
-
-**Description**
-
-Implement versioned list, detail, filter, and permitted update endpoints with
-pagination, sorting, validation, and explicit errors.
-
-**Acceptance criteria**
-
-- List and detail responses expose normalized fields and Jira source context.
-- All specified Release-1 filters work consistently.
-- Invalid filters return field-specific validation errors.
-- Pagination and sorting are deterministic.
-
-### T-017 — Implement lifecycle and governance updates
-
-**Depends on:** T-016, T-009  
-**Owner boundary:** backend registry/governance service
-
-**Description**
-
-Implement Release-1 lifecycle updates, decision outcomes, governance notes, and
-decision history.
-
-**Acceptance criteria**
-
-- Canonical lifecycle states are validated.
-- Authorized updates record actor and timestamp.
-- Prior state/outcome and new state/outcome are retained.
-- Jira synchronization does not overwrite governance-only fields.
-
-### T-018 — Implement minimum Release-1 authorization
-
-**Depends on:** T-016, T-001  
-**Owner boundary:** backend middleware and access repositories
-
-**Description**
-
-Enforce the approved prototype role and project-scope boundary on every
-protected endpoint.
-
-**Acceptance criteria**
-
-- Unauthorized reads and writes are rejected.
-- Authorized project-scoped reads and writes succeed.
-- Negative authorization tests cover every protected route group.
-- Frontend guards do not substitute for backend authorization.
-
-### T-019 — Implement reporting API
-
-**Depends on:** T-016, T-014  
-**Owner boundary:** backend reporting service/routes
-
-**Description**
-
-Implement project, status, priority, overdue, selected-period, trend, and
-synchronization-freshness summaries using the shared filter contract.
-
-**Acceptance criteria**
-
-- List and report totals agree for identical filters.
-- Overdue and period inclusion follow the Release-1 documented rules.
-- Results expose data freshness and selected filter context.
-- Queries use normalized validated records.
-
-### T-020 — Build CR list and detail features
-
-**Depends on:** T-011, T-012, T-016, T-017  
-**Owner boundary:** frontend change-request feature
-
-**Description**
-
-Build the registry list, filters, pagination, detail view, Jira source display,
-governance fields, lifecycle display, history, and permitted edit controls.
-
-**Acceptance criteria**
-
-- An authorized user can list, filter, inspect, and update permitted fields.
-- Loading, empty, error, retry, and permission-denied states render correctly.
-- Jira-sourced and manual fields are visibly distinguishable.
-- Frontend tests cover primary list and detail journeys.
-
-### T-021 — Build dashboard feature
-
-**Depends on:** T-011, T-012, T-019  
-**Owner boundary:** frontend dashboard feature
-
-**Description**
-
-Build dashboard cards, tables, and charts for the required summaries and
-freshness/failure indicators.
-
-**Acceptance criteria**
-
-- Dashboard supports the same filters as the registry.
-- Project, status, priority, overdue, period, trend, and freshness views are
-  displayed.
-- Empty and failed synchronization states are visible.
-- Accessibility checks pass for critical dashboard controls.
-
-### T-022 — Implement snapshots
-
-**Depends on:** T-019, T-018  
-**Owner boundary:** backend snapshot service/routes and frontend reports feature
-
-**Description**
-
-Implement weekly/monthly snapshot creation and retrieval with period, filters,
-aggregates, timestamp, and freshness context.
-
-**Acceptance criteria**
-
-- Authorized reporting users can create and retrieve snapshots.
-- Snapshot values remain unchanged after later CR updates.
-- Snapshot access respects project scope.
-- Frontend and API tests cover creation and retrieval.
-
-### T-023 — Implement CSV and Release-1 shareable reports
-
-**Depends on:** T-019, T-022, T-018  
-**Owner boundary:** backend export service and frontend reports feature
-
-**Description**
-
-Generate filtered reports using the same query/filter contract as the dashboard.
-
-**Acceptance criteria**
-
-- CSV output has stable documented columns and date formatting.
-- Output includes period, filters, generation time, and freshness.
-- Export data is authorization-scoped.
-- Export failures are explicit, logged, and covered by tests.
-
-### T-024 — Build administration feature
-
-**Depends on:** T-015, T-018, T-020  
-**Owner boundary:** administration frontend and backend configuration routes
-
-**Description**
-
-Provide Release-1 administration for pilot projects, filters, field mappings,
-canonical values, schedules, access scope, synchronization history, and
-reprocessing.
-
-**Acceptance criteria**
-
-- Administrators can view and update approved configuration fields.
-- Non-administrators cannot access configuration mutations.
-- Configuration changes are validated and reflected in subsequent runs.
-- Synchronization history and reprocessing results are visible.
-
-## Phase 4 — Integration and testing
-
-### T-025 — Add integration test suite
-
-**Depends on:** T-015, T-016, T-017, T-019, T-022, T-023  
-**Owner boundary:** `tests/integration`
-
-**Description**
-
-Test Jira synchronization, repositories, API contracts, authorization,
-reporting, snapshots, and exports against PostgreSQL and controlled external
-service fixtures.
-
-**Acceptance criteria**
-
-- Tests cover success, partial, and failure synchronization paths.
-- Tests verify duplicate prevention and governance-field preservation.
-- Authorization negative cases pass.
-- Report, snapshot, and export values are verified against known fixtures.
-
-### T-026 — Add end-to-end user journey tests
-
-**Depends on:** T-020, T-021, T-022, T-023, T-024  
-**Owner boundary:** `tests/e2e`
-
-**Description**
-
-Cover portfolio review, filtering, CR inspection, governance update, snapshot,
-export, synchronization status, and permission-denied journeys.
-
-**Acceptance criteria**
-
-- Tests run against a repeatable local test environment.
-- Primary authorized-user journeys pass without manual intervention.
-- Permission-denied and service-error states are exercised.
-
-### T-027 — Test failure recovery and data quality
-
-**Depends on:** T-025  
-**Owner boundary:** integration/E2E tests
-
-**Description**
-
-Exercise retries, partial runs, missing Jira links, unmapped values, overdue
-records, database restart, and bounded reprocessing.
-
-**Acceptance criteria**
-
-- Each failure produces a visible diagnostic result.
-- No failure is represented as a successful empty result.
-- Reprocessing produces deterministic, duplicate-free outcomes.
-- Data-quality issues are retained and queryable.
-
-### T-028 — Run security, performance, and observability review
-
-**Depends on:** T-025, T-026, T-027  
-**Owner boundary:** repository operations and application boundaries
-
-**Description**
-
-Verify secret redaction, authorization coverage, structured logs, correlation
-context, health/readiness behavior, and agreed pilot performance targets.
-
-**Acceptance criteria**
-
-- No credentials or unnecessary Jira/Confluence data appear in logs or source.
-- All protected routes enforce backend authorization.
-- Dashboard and synchronization measurements meet T-001 targets or have
-  documented exceptions.
-- Operational failures are diagnosable from logs and run history.
-
-### T-029 — Document operations and pilot runbook
-
-**Depends on:** T-028  
-**Owner boundary:** `README.md`, operational documentation
-
-**Description**
-
-Document setup, Docker startup, migrations, environment configuration, Jira
-sync, reprocessing, troubleshooting, backups/restore assumptions, and pilot
-execution.
-
-**Acceptance criteria**
-
-- A new developer can start the stack from the documented instructions.
-- Operators can identify and reprocess a failed synchronization.
-- Documentation identifies Release-2 deferred items and known assumptions.
-
-### T-030 — Execute pilot and release review
-
-**Depends on:** T-028, T-029  
-**Owner boundary:** project/release process
-
-**Description**
-
-Run the pilot against two or three projects, review mappings and data quality,
-and assess the Release-1 acceptance checklist.
-
-**Acceptance criteria**
-
-- Pilot findings are recorded with owners and follow-up scope.
-- All Release-1 acceptance checklist items are demonstrated or explicitly
-  excepted.
-- Unresolved issues are assigned to the Release-2 backlog.
-- Release-1 candidate approval is documented.
-
-## Release-2 backlog tasks
-
-### T-031 — Clarify and specify Release-2 decisions
-
-**Depends on:** T-030  
-**Owner boundary:** `spec/`
-
-**Description**
-
-Resolve C-01, C-02, C-03, and G-01 through G-35 in a revised specification
-before implementing Release 2.
-
-**Acceptance criteria**
-
-- Confluence publication contract is defined.
-- Manual/provisional CR and merge rules are defined.
-- Canonical roles and inheritance are defined.
-- Each G-item has an accepted decision, owner, and implementation scope.
-
-### T-032 — Plan Release-2 implementation
-
-**Depends on:** T-031  
-**Owner boundary:** `spec/`
-
-**Description**
-
-Update the architecture, traceability matrix, migrations, API contracts, test
-plan, and milestone plan for approved Release-2 decisions.
-
-**Acceptance criteria**
-
-- Release-2 changes do not silently alter Release-1 data ownership or metrics.
-- New requirements map to repository boundaries and acceptance tests.
-- Migration, compatibility, rollout, and rollback impacts are documented.
+Dependencies:
+- Task 12

@@ -1,370 +1,194 @@
-# CR Registry Implementation Plan
-
-## 1. Plan basis
-
-This plan is based on:
-
-- [`constitution.md`](./constitution.md)
-- [`specification.md`](./specification.md)
-- [`clarify.md`](./clarify.md)
-
-The plan uses the current release decisions:
-
-- **Release 1:** Jira-sourced CR registry prototype, reporting, snapshots,
-  exports, and the minimum role/access behavior needed to protect the
-  prototype.
-- **Release 2:** Confluence publication, manual CR creation and its merge
-  rules, expanded role model decisions, and all G-01 through G-35
-  clarification items.
-- **Immediate action:** Complete C-05 by mapping requirements to repository
-  boundaries before implementation.
-- **Accepted baseline:** C-04; the constitution is the source for the React 18,
-  Vite, Node.js, Express, PostgreSQL 15, and Docker baseline.
-
-Release-2 items remain visible in this plan as a backlog, but they are not
-Release-1 acceptance gates unless planning discovers a direct dependency.
-
-## 2. Target architecture
-
-The implementation will use the monorepo boundaries defined by the
-constitution:
-
-- `apps/frontend`: React 18/Vite application with feature-oriented UI.
-- `apps/backend`: Node.js/Express API, domain services, Jira adapter, reporting,
-  export, and scheduled jobs.
-- `packages/shared-types`: shared CR, filter, report, and API contracts.
-- `packages/validation`: shared request and domain validation.
-- `packages/config`: typed environment and application configuration.
-- `database`: PostgreSQL 15 schema, migrations, and seed data.
-- `tests/integration` and `tests/e2e`: infrastructure and acceptance coverage.
-
-Jira integration remains isolated behind a backend adapter. PostgreSQL is the
-system's normalized read/reporting store. Docker Compose provides the local
-database and development dependencies.
-
-## 3. Requirement-to-boundary traceability (C-05)
-
-| Requirement area | Frontend | Backend | Shared/database |
-| --- | --- | --- | --- |
-| CR list, detail, filters | `features/change-requests`, `pages`, `services` | routes, controllers, registry service | CR/filter types, CR tables and indexes |
-| Jira ingestion and normalization | administration/sync status UI | `services/jira`, normalization service, `jobs` | source mappings, sync runs, data-quality tables |
-| Lifecycle and governance notes | CR detail/edit UI | registry and governance services | CR fields, decision history |
-| Dashboard and trends | `features/dashboard` | reporting service and routes | reporting queries/indexes |
-| Snapshots | `features/reports` | snapshot service and routes | snapshot tables |
-| CSV/shareable reports | report controls and download handling | export service and routes | report metadata as needed |
-| Access control | route guards and user context | authentication/authorization middleware | user, role, and project-scope data |
-| Administration | `features/administration` | configuration routes/services | project and field-mapping tables |
-| Testing | feature tests and E2E flows | service/API integration tests | migration and database test fixtures |
-
-This table is the initial C-05 mapping. The technical design phase MUST turn it
-into a route, module, migration, and test traceability matrix.
-
-## 4. Four-phase delivery model
-
-The detailed milestones below are grouped into four implementation phases so
-that each phase produces a usable, verifiable increment.
-
-### Phase 1 — Backend setup
-
-**Focus:** Database, API skeleton, configuration, and integration boundaries.
-
-This phase includes:
-
-- Phase 0 — Scope and technical decisions.
-- Phase 1 — Repository and development foundation.
-- Phase 2 — Data model and persistence.
-- The foundation of Phase 3 — Jira adapter, normalization boundary, and job
-  entry points.
-- The foundation of Phase 4 — versioned Express routes, validation, and
-  authorization middleware.
-
-**Milestone:** PostgreSQL runs through Docker, migrations apply, the Express
-health endpoint responds, shared contracts exist, and the API skeleton exposes
-validated route boundaries.
-
-### Phase 2 — Frontend setup
-
-**Focus:** React/Vite application shell, UI skeleton, routing, and API client.
-
-This phase includes:
-
-- React 18/Vite application configuration.
-- Application shell and navigation.
-- Protected-route and user-context boundaries.
-- Shared frontend types and API service setup.
-- Loading, empty, error, and permission-denied UI states.
-
-**Milestone:** The frontend starts locally, routes render through the application
-shell, and placeholder screens can call the versioned backend API.
-
-### Phase 3 — Feature implementation
-
-**Focus:** Deliver one complete feature at a time as vertical slices.
-
-Features are implemented in this order:
-
-1. **Jira synchronization:** ingestion, normalization, upsert, run history,
-   errors, and pilot-scope reprocessing.
-2. **CR registry:** list, detail, filters, pagination, Jira source context,
-   governance fields, lifecycle display, and permitted updates.
-3. **Dashboard:** project, status, priority, overdue, period, trend, and
-   synchronization freshness summaries.
-4. **Snapshots:** weekly/monthly creation and retrieval with preserved context.
-5. **Exports:** filtered CSV and the selected Release-1 shareable report format.
-6. **Administration:** pilot project configuration, field mappings, schedules,
-   canonical values, and access scope.
-
-Each feature MUST include its backend route/service, persistence changes,
-frontend UI, shared contract/validation updates, focused tests, and acceptance
-criteria demonstration before the next feature begins.
-
-**Milestone:** Every Release-1 feature is independently usable and integrated
-through the real API and PostgreSQL store rather than placeholders or mocked
-production paths.
-
-### Phase 4 — Integration and testing
-
-**Focus:** End-to-end behavior, reliability, security, performance, and pilot
-readiness.
-
-This phase includes:
-
-- Full Jira-to-database-to-API-to-React flow verification.
-- Integration tests for synchronization, persistence, authorization, reporting,
-  snapshots, and exports.
-- E2E tests for the primary user journeys.
-- Failure tests for retries, partial syncs, missing links, unmapped values,
-  overdue records, and database restarts.
-- Secret/log review, migration verification, and Docker setup validation.
-- Measurement against the agreed pilot response and synchronization targets.
-- Pilot execution with two or three projects and Release-2 backlog capture.
-
-**Milestone:** The Release-1 acceptance checklist is green, quality gates pass,
-and the pilot is ready for stakeholder review.
-
-## 5. Detailed phases and milestones
-
-### Phase 0 — Scope and technical decisions
-
-**Goal:** Make Release-1 assumptions explicit without pulling the Release-2
-clarification backlog into implementation.
-
-**Tasks**
-
-- Confirm the pilot Jira projects, issue types, filters, and required fields.
-- Record Release-1 canonical CR lifecycle, priority, impact, and date rules
-  sufficient to build the pilot.
-- Define the minimum prototype access model and local authentication stub or
-  adapter boundary.
-- Confirm Jira environment, credentials mechanism, required permissions, and
-  API connectivity.
-- Turn the C-05 traceability table into a detailed requirement matrix.
-- Define measurable pilot data volume and dashboard response targets.
-
-**Milestone M0 — Release-1 baseline approved**
-
-Exit when the pilot scope, source fields, canonical mappings, access boundary,
-environment variables, and acceptance-test dataset are documented.
-
-### Phase 1 — Repository and development foundation
-
-**Goal:** Make the skeleton buildable and repeatable.
-
-**Tasks**
-
-- Configure root workspace/package management and scripts.
-- Configure React 18/Vite frontend and Node.js/Express backend packages.
-- Add shared package entry points and TypeScript/API contract conventions if
-  selected by the technical design.
-- Add typed environment configuration and `.env.example`.
-- Add Docker Compose for PostgreSQL 15 with persistent development volume,
-  health check, and safe local defaults.
-- Establish formatting, linting, type-checking, test, and migration commands
-  using project-approved tools.
-- Add application health/readiness endpoints and a frontend/backend development
-  startup path.
-
-**Milestone M1 — Foundation runs locally**
-
-A new checkout can start PostgreSQL, run migrations, start both applications,
-execute quality checks, and report dependency/configuration errors explicitly.
-
-### Phase 2 — Data model and persistence
-
-**Goal:** Create the normalized storage model required by the Release-1 flows.
-
-**Tasks**
-
-- Define CR table fields, nullability, canonical status values, timestamps, and
-  Jira-key uniqueness.
-- Define project configuration and Jira field-mapping tables.
-- Define synchronization-run and data-quality issue tables.
-- Define decision history and snapshot tables.
-- Add foreign keys, indexes for project/status/priority/owner/date/Jira key, and
-  migration rollback or recovery guidance.
-- Add seed data for the pilot project configuration and canonical mappings.
-- Implement repository interfaces and database integration tests.
-
-**Milestone M2 — Persistence contract stable**
-
-Migrations apply cleanly to an empty PostgreSQL 15 database, repository tests
-pass, and the schema supports the CR and reporting acceptance criteria.
-
-### Phase 3 — Jira ingestion and CR normalization
-
-**Goal:** Load Jira CR metadata into the registry reliably.
-
-**Tasks**
-
-- Implement a Jira client adapter with pagination, timeouts, bounded retries,
-  and structured errors.
-- Implement configured project/filter retrieval.
-- Normalize Jira fields into the shared CR model.
-- Upsert records by stable Jira issue key.
-- Preserve source values and keep governance fields separate.
-- Record synchronization runs, counts, timestamps, and data-quality issues.
-- Add scheduled and manual synchronization job entry points.
-- Add bounded reprocessing for the Release-1 pilot scope.
-
-**Milestone M3 — Jira synchronization works**
-
-A configured pilot project can be synchronized repeatedly without duplicate CRs;
-successful, partial, and failed runs are distinguishable and diagnosable.
-
-### Phase 4 — Core Express API
-
-**Goal:** Expose secure, validated registry operations to the frontend.
-
-**Tasks**
-
-- Add versioned routes for CR list/detail/update, filters, dashboard data,
-  snapshots, exports, synchronization status, and administration.
-- Add request validation and consistent success/error response shapes.
-- Implement the minimum Release-1 authorization boundary and project scope.
-- Add pagination, sorting, filtering, and stable query behavior.
-- Implement lifecycle updates, governance notes, decision outcomes, and history.
-- Add API contract tests and integration tests against PostgreSQL.
-
-**Milestone M4 — API supports vertical slices**
-
-The API can support the list, detail, synchronization, dashboard, snapshot, and
-export flows with validated requests, explicit errors, and authorization checks.
-
-### Phase 5 — React registry and dashboard
-
-**Goal:** Deliver the primary manager and project-lead experience.
-
-**Tasks**
-
-- Build application shell, navigation, user context, and protected routes.
-- Build CR list with all Release-1 filters and deterministic pagination.
-- Build CR detail view showing Jira source context, governance fields, and
-  history.
-- Build authorized governance edit controls and lifecycle display.
-- Build dashboard cards/tables/charts for project, status, priority, overdue,
-  period, trend, and synchronization freshness summaries.
-- Implement loading, empty, error, retry, and permission-denied states.
-- Add frontend component/feature tests and accessibility checks for critical
-  flows.
-
-**Milestone M5 — Core user journeys complete**
-
-An authorized pilot user can inspect CRs, filter the registry, review portfolio
-summaries, and update permitted governance data through the React application.
-
-### Phase 6 — Snapshots and exports
-
-**Goal:** Support repeatable governance reporting.
-
-**Tasks**
-
-- Implement weekly and monthly snapshot creation and retrieval.
-- Persist period, filters, aggregates, creation time, and freshness context.
-- Implement CSV generation from the same filtered query contract used by the UI.
-- Add report metadata and scoped download behavior.
-- Add export error handling and audit logging.
-- Validate output against representative pilot data.
-
-**Milestone M6 — Reporting package ready**
-
-Users with reporting access can create snapshots and export filtered results,
-and the output includes its reporting context and data freshness.
-
-### Phase 7 — End-to-end hardening and pilot
-
-**Goal:** Validate the complete Release-1 vertical slice against the
-constitution and acceptance criteria.
-
-**Tasks**
-
-- Run integration tests for Jira sync, persistence, API authorization, reports,
-  snapshots, and exports.
-- Run E2E tests for the primary user journeys.
-- Test retries, partial syncs, missing Jira links, unmapped values, overdue
-  records, and database restart behavior.
-- Verify logs contain no secrets or unnecessary Jira/Confluence data.
-- Measure dashboard response and synchronization throughput against M0 targets.
-- Document setup, operations, migration, troubleshooting, and pilot runbooks.
-- Conduct pilot with two or three projects and record mapping/data-quality
-  findings.
-
-**Milestone M7 — Release-1 candidate**
-
-All Release-1 acceptance criteria pass, quality gates are green, pilot findings
-are recorded, and unresolved issues are assigned to the Release-2 backlog.
-
-## 6. Release-1 acceptance checklist
-
-- [ ] CR records can be viewed and filtered by the specified key dimensions.
-- [ ] Jira metadata synchronizes into a normalized CR model.
-- [ ] Jira issue-key mappings remain stable and duplicate-free.
-- [ ] Governance enrichment is preserved across synchronization.
-- [ ] Lifecycle state and decision history are visible and auditable.
-- [ ] Dashboard summaries include project, status, priority, overdue, period,
-      trend, and freshness information.
-- [ ] Weekly and monthly snapshots can be created and retrieved.
-- [ ] Filtered reports can be exported as CSV or the selected Release-1
-      shareable format.
-- [ ] Synchronization failures are visible and pilot-scope reprocessing works.
-- [ ] Backend authorization protects all Release-1 protected operations.
-- [ ] PostgreSQL migrations, Docker setup, tests, and quality checks are
-      repeatable.
-- [ ] The C-05 traceability matrix is maintained as implementation changes.
-
-## 7. Release-2 backlog
-
-Release 2 begins with a dedicated clarification and design cycle for:
-
-- C-01: Confluence publication and its complete publication contract.
-- C-02: Manual/provisional CR creation and Jira merge rules.
-- C-03: Canonical role model, inheritance, and multi-role behavior.
-- G-01 through G-35: authentication, authorization detail, Jira contract,
-  identification rules, field mappings, lifecycle rules, reporting semantics,
-  retention, concurrency, API detail, UX, performance, observability,
-  availability, deployment, testing, configuration, and security/privacy.
-
-Release-2 work MUST update the specification before implementation and MUST NOT
-silently change Release-1 data ownership or report definitions.
-
-## 8. Risks and mitigations
-
-| Risk | Mitigation |
-| --- | --- |
-| Jira projects use inconsistent fields | Pilot mappings, preserve source values, record data-quality issues |
-| Jira API outage or rate limiting | Timeouts, bounded retries, visible run status, reprocessing |
-| Governance data is overwritten | Separate source/manual columns and synchronization merge tests |
-| Reports disagree with lists | Share one filter/query contract and add cross-view tests |
-| Access scope leaks data | Enforce authorization in every backend route and test negative cases |
-| PostgreSQL setup differs by machine | Pin the Docker image, add health checks, and document startup |
-| Scope expands during the prototype | Route unresolved items to Release 2 and require a specification update |
-
-## 9. Milestone review protocol
-
-At each milestone, review:
-
-1. Traceability from requirements to code and tests.
-2. Constitution compliance for naming, boundaries, security, and error handling.
-3. Data ownership and synchronization behavior.
-4. Acceptance criteria demonstrated with representative data.
-5. New ambiguities or dependencies that should be added to
-   [`clarify.md`](./clarify.md).
+# Weekly Status Report Generator — Implementation Plan
+
+## Project goal
+
+Build a deliberately small, manual reporting tool for the Shell SSW delivery manager. It will fetch Jira issues for project `SHELSSW`, filter to Story items in `To Do`, `In Progress`, and `Done`, and render a plain-text, one-page email draft preview for copy/paste into email.
+
+This plan follows the approved v1 scope:
+- Single team only (`SHELSSW`)
+- Manual trigger only
+- Last 7 calendar days
+- Jira as the only source of truth
+- Plain-text email preview output
+- No database in v1
+- No auth in v1
+- No automation beyond immediate generation on button click
+
+---
+
+## Phase 1: Backend setup (API skeleton and minimal config)
+
+Goal: establish the backend foundation and the report generation endpoint without introducing unnecessary architecture.
+
+### Milestone 1.1 — project and runtime setup
+- Initialize Node.js + Express backend project.
+- Add environment configuration for the Jira base URL and credentials.
+- Confirm the app runs locally via a health endpoint.
+- Keep configuration static and minimal.
+- Note: v1 intentionally does not add a database layer; persistence is not required.
+
+### Milestone 1.2 — API skeleton
+- Create the base Express app with a minimal structure such as:
+  - `src/app.js`
+  - `src/server.js`
+  - `src/routes/reportRoutes.js`
+  - `src/controllers/reportController.js`
+  - `src/services/jiraService.js`
+- Add `/api/health` endpoint for startup validation.
+- Add `/api/reports/generate` endpoint stub returning a placeholder response.
+
+### Milestone 1.3 — Jira integration contract
+- Implement Jira fetch logic for project `SHELSSW` only.
+- Define the report window as the last 7 calendar days.
+- Filter issues to:
+  - issue type: `Story`
+  - statuses: `To Do`, `In Progress`, `Done`
+- Map Jira issue fields to the required output:
+  - key
+  - summary
+  - status
+  - assignee
+  - last update
+
+### Milestone 1.4 — report formatting
+- Build plain-text formatter that produces a one-page email draft.
+- Keep output factual and flat; no grouping, no summaries, no risk logic.
+- Return a clean error message if Jira calls fail.
+
+### Phase 1 exit criteria
+- Backend can start successfully.
+- `/api/health` works.
+- `/api/reports/generate` returns generated report content or a raw error message.
+- No database layer is added for v1.
+
+---
+
+## Phase 2: Frontend setup (UI skeleton and routing)
+
+Goal: create the minimal interface for the delivery manager to trigger the report and review the output.
+
+### Milestone 2.1 — Vite React app setup
+- Initialize React 18 + Vite frontend.
+- Add the basic app shell and dependencies.
+- Set up the app to run locally in development mode.
+
+### Milestone 2.2 — page routing and layout
+- Create the main page for the weekly report workflow.
+- Keep the UI to a single screen with a title, trigger button, and preview pane.
+- No login, no role switching, no additional navigation.
+
+### Milestone 2.3 — form and state handling
+- Add a `Generate weekly report` button.
+- Trigger a backend request on click.
+- Manage loading and error states.
+- Display the raw backend error message directly when there is a failure.
+
+### Milestone 2.4 — preview experience
+- Render the generated email draft in a plain-text preview area.
+- Ensure text is copyable to clipboard/email client.
+- Style minimally; the focus is on readability, not visual complexity.
+
+### Phase 2 exit criteria
+- User can open the app and generate a status draft with one click.
+- The preview is visible and copyable.
+- Error handling is visible and plain.
+
+---
+
+## Phase 3: Feature implementation (one feature at a time)
+
+Goal: implement the product in a controlled sequence, ensuring each feature is validated before moving to the next.
+
+### Feature 3.1 — Project and date filtering
+- Implement project filter for `SHELSSW`.
+- Implement the last 7 calendar days filter.
+- Validate returned Jira data against the exact reporting period.
+
+### Feature 3.2 — Issue type and status filtering
+- Restrict to `Story` issue type.
+- Restrict to `To Do`, `In Progress`, and `Done` only.
+- Confirm that all other issue types are excluded.
+
+### Feature 3.3 — Data shaping for report content
+- Normalize Jira fields into the exact output model:
+  - key
+  - summary
+  - status
+  - assignee
+  - updatedAt
+- Ensure records are listed flat with no grouping.
+
+### Feature 3.4 — Plain-text report generation
+- Build the email draft string as plain text.
+- Include only the required issue list.
+- Do not add summary metrics, heading blocks, or risk analysis.
+
+### Feature 3.5 — Manual trigger and preview flow
+- Wire the frontend button to the backend endpoint.
+- Display the generated output immediately after fetch.
+- Confirm the content is ready for copy to email.
+
+### Feature 3.6 — Error path
+- Handle Jira fetch failures gracefully.
+- Surface the raw error from the backend without additional formatting.
+
+### Phase 3 exit criteria
+- Each feature works independently.
+- The app remains small, factual, and manual.
+- No feature beyond the v1 scope is introduced.
+
+---
+
+## Phase 4: Integration and testing
+
+Goal: verify end-to-end behavior for the single supported workflow and ensure the app remains intentionally minimal.
+
+### Milestone 4.1 — End-to-end smoke testing
+- Verify the app starts successfully.
+- Trigger report generation from the frontend.
+- Confirm backend fetches Jira issues for the correct project and filters.
+- Confirm the preview displays the generated plain-text output.
+
+### Milestone 4.2 — Validation of filtering rules
+- Validate last 7 days logic.
+- Validate Story-only filtering.
+- Validate allowed status filtering.
+- Validate that closed items are included inline with open items.
+
+### Milestone 4.3 — Error behavior checks
+- Simulate a failed Jira request.
+- Confirm the system shows the raw error returned by the backend.
+- Verify there is no misleading fallback output.
+
+### Milestone 4.4 — Manual QA and release readiness
+- Test the UI with a realistic Jira dataset.
+- Confirm output is copyable and readable in a standard email client.
+- Review for scope compliance against v1 requirements.
+- Reject any additional features that are not explicitly approved.
+
+### Phase 4 exit criteria
+- The report-generation flow works end-to-end.
+- Output matches the approved v1 requirements.
+- No database, auth, summaries, scoring, or automation are included.
+- The tool is ready for a manual stakeholder reporting workflow.
+
+---
+
+## Recommended delivery sequence
+
+1. Backend health and report API skeleton
+2. Jira fetch and filter logic
+3. Plain-text report formatting
+4. Frontend shell and button interaction
+5. Preview rendering and copy flow
+6. Error handling validation
+7. Final smoke test against v1 acceptance criteria
+
+## Definition of done
+
+The implementation is complete when:
+- the delivery manager can trigger the weekly report from the app,
+- the app fetches Jira data for `SHELSSW`,
+- the output contains only Story items in the last 7 days and allowed statuses,
+- the result is a one-page plain-text preview, and
+- the workflow remains deliberately simple and manual without database, auth, or analytics features.

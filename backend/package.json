@@ -1,0 +1,23 @@
+{
+  "name": "shell-ssw-status-backend",
+  "version": "1.0.0",
+  "description": "Express backend for the Shell SSW weekly status report generator",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "jira",
+    "status-report",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
