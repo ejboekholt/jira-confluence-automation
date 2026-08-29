@@ -88,6 +88,7 @@ Status:
 - Re-tested the main user flow after the fixes.
 
 Relevant repository references:
+- `7a18778` – `docs: add QA report`
 - `445d9d3` – `fix: form validation error on submit`
 - `8fc2a40` – `feat: complete prototype per specification.`
 - `b566c42` – `Refactor Weekly Status Report Generator specification and tasks for v1 release`
