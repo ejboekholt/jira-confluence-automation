@@ -1,0 +1,8 @@
+# Local environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Project-specific secret file
+Hello-genai/.env
